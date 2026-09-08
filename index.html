@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  =============================================================================
+  APPLICATION: Swara Ear Trainer (Unified Master Edition)
+  =============================================================================
+  Copyright (c) 2026 Utpal Chattopadhyay. All rights reserved.
+  
+  PROPRIETARY NOTICE:
+  This software, sound design algorithms, tuning models, and interface designs
+  are the exclusive property of Utpal Chattopadhyay. No reproduction, reverse
+  engineering, distribution, or creation of derivative works is permitted
+  without explicit written permission from the author.
+  =============================================================================
+  TIMBRE DESIGN SUITE:
+    1. Studio Sampled (V3): Offline resampled acoustic Tanpura buffer with
+       Jawari overtone bloom. Highly optimized for mobile speakers and low latency.
+    2. Dual Formants (V2): Dual-cavity resonator (Tumba @ 220Hz, Tabli @ 780Hz)
+       with organic 3.5Hz LFO bridge shimmer. Rich for headphones & laptops.
+    3. Acoustic Ladder (V1): Harmonic ladder synthesizer with micro-cents
+       inharmonic detuning and resonant acoustic body filtering.
+  =============================================================================
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swara Ear Trainer - Master Edition</title>
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 780px;
+      margin: 18px auto;
+      padding: 0 16px 32px;
+      text-align: center;
+      background: #faf8f5;
+      color: #2b2621;
+    }
+    h2 { font-size: 24px; margin-bottom: 4px; color: #3d2314; }
+    .subtitle { font-size: 13px; color: #7a6a5d; margin-top: 0; margin-bottom: 14px; }
+    h3 { font-size: 14px; margin: 0 0 10px; color: #5c4333; text-transform: uppercase; letter-spacing: 0.8px; }
+    
+    .panel {
+      background: #ffffff;
+      margin: 12px 0;
+      padding: 16px 18px;
+      border: 1px solid #e8dfd5;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px rgba(61, 35, 20, 0.03);
+    }
+    .controls-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #4a3b32;
+    }
+    select {
+      padding: 6px 10px;
+      font-size: 13.5px;
+      border: 1px solid #d4c5b7;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      color: #2b2621;
+    }
+    button {
+      padding: 8px 15px;
+      margin: 3px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #d4c5b7;
+      border-radius: 7px;
+      background: #ffffff;
+      font-weight: 600;
+      color: #3d2314;
+      transition: all 0.15s ease-in-out;
+    }
+    button:hover:not(:disabled) { background: #f5eee6; border-color: #b59f8c; }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      filter: grayscale(40%);
+    }
+    .btn-primary { background: #8b4513; color: #ffffff; border-color: #8b4513; }
+    .btn-primary:hover:not(:disabled) { background: #70360e; border-color: #70360e; }
+    .btn-loop-start { background: #2e7d32; color: #ffffff; border-color: #2e7d32; }
+    .btn-loop-start:hover:not(:disabled) { background: #1b5e20; border-color: #1b5e20; }
+    .btn-loop-stop { background: #c62828 !important; color: #ffffff !important; border-color: #c62828 !important; }
+    .btn-scale {
+      background: #fdfbf7;
+      border: 1.5px solid #c8b7a6;
+      color: #4a3525;
+      font-size: 13px;
+      padding: 6px 14px;
+    }
+
+    /* Timbre Advisor Notice */
+    .timbre-advisor {
+      font-size: 11.5px;
+      color: #855c3c;
+      font-weight: 600;
+      margin-top: -4px;
+      margin-bottom: 8px;
+    }
+
+    /* Combined Banner & Note Selector Row */
+    .banner-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 2px 0 8px;
+    }
+    .loop-rule-banner {
+      font-size: 12.5px;
+      color: #7a6a5d;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      transition: all 0.25s ease-in-out;
+    }
+    .loop-rule-alert {
+      color: #b91c1c !important;
+      background: #fee2e2 !important;
+      border: 1px solid #fca5a5;
+    }
+
+    .swar-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .swar-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+      font-size: 20px;
+      font-weight: 700;
+      background: #fffdfa;
+      border: 1.5px solid #d4c5b7;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .swar-btn:hover:not(:disabled) { background: #f5ede4; border-color: #8b4513; }
+    .swar-btn .key-hint { font-size: 10px; color: #9c8979; font-weight: 500; margin-top: 2px; }
+
+    /* Compact challenge note display */
+    #targetDisplay {
+      font-size: 28px;
+      letter-spacing: 8px;
+      margin: 4px 0 2px;
+      font-weight: 700;
+      color: #3d2314;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Single-line Attempt & Status Indicator */
+    #statusLine {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #7a6a5d;
+      min-height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+    .status-msg { font-weight: 700; }
+    .msg-correct { color: #15803d; }
+    .msg-incorrect { color: #c2410c; }
+    .msg-failed { color: #b91c1c; }
+
+    footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #9c8979;
+      letter-spacing: 0.3px;
+    }
+
+    /* ==========================================================================
+       MOBILE RESPONSIVE RULES (Max Width: 600px)
+       Prevents vertical scrolling, stops buttons squishing, optimizes touch
+       ========================================================================== */
+    @media (max-width: 600px) {
+      body {
+        margin: 8px auto;
+        padding: 0 10px 18px;
+      }
+      h2 { font-size: 21px; margin-bottom: 2px; }
+      .subtitle { font-size: 11.5px; margin-bottom: 10px; }
+      .panel {
+        margin: 8px 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+      }
+      h3 { font-size: 13px; margin-bottom: 8px; }
+      .controls-row {
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .control-group {
+        font-size: 12.5px;
+      }
+      select {
+        padding: 5px 8px;
+        font-size: 12.5px;
+      }
+      button {
+        padding: 7px 12px;
+        font-size: 13px;
+        margin: 2px;
+      }
+      .swar-grid {
+        gap: 4px;
+        margin-top: 4px;
+      }
+      .swar-btn {
+        padding: 8px 0;
+        font-size: 18px;
+        border-radius: 6px;
+      }
+      /* Hide desktop keyboard shortcut numbers on phone to expand touch targets */
+      .swar-btn .key-hint {
+        display: none;
+      }
+      #targetDisplay {
+        font-size: 24px;
+        letter-spacing: 6px;
+        min-height: 28px;
+      }
+      #statusLine {
+        font-size: 12.5px;
+        min-height: 16px;
+      }
+      .loop-rule-banner {
+        font-size: 11.5px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Swara Ear Trainer</h2>
+  <p class="subtitle">Thaat-Based Relative Pitch Ear Training with Tanpura Drone</p>
+
+  <!-- Tuning & Looping Panel -->
+  <div class="panel">
+    <h3>Tonic & Tanpura Controls</h3>
+
+    <!-- Master Acoustic Timbre Selection -->
+    <div class="controls-row" style="margin-bottom: 6px;">
+      <div class="control-group">
+        <label for="timbreSelect">Acoustic Timbre:</label>
+        <select id="timbreSelect" onchange="onTimbreChange()">
+          <option value="sampled" selected>Studio Sampled (Recommended for Mobile or Laptop)</option>
+          <option value="formant">Dual-Chamber Resonator (Recommended for Laptop / Headphones)</option>
+          <option value="ladder">Acoustic Ladder Synthesizer</option>
+        </select>
+      </div>
+    </div>
+    <div id="timbreAdvisor" class="timbre-advisor"></div>
+
+    <div class="controls-row">
+      <div class="control-group">
+        <label for="scaleSelect">Tonic (Sa):</label>
+        <select id="scaleSelect" onchange="onConfigChange()">
+          <option value="116.54" selected>A# (~116.5 Hz)</option>
+          <option value="123.47">B (123.5 Hz)</option>
+          <option value="130.81">C (130.8 Hz)</option>
+          <option value="138.59">C# (138.6 Hz)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="thaatSelect">Thaat:</label>
+        <select id="thaatSelect" onchange="onConfigChange()">
+          <option value="Bilawal" selected>Bilawal (All Shuddha)</option>
+          <option value="Kalyan">Kalyan (Teevra Ma)</option>
+          <option value="Khamaj">Khamaj (Komal Ni)</option>
+          <option value="Kafi">Kafi (Komal Ga, Ni)</option>
+          <option value="Asavari">Asavari (Komal Ga, Dha, Ni)</option>
+          <option value="Bhairav">Bhairav (Komal Re, Dha)</option>
+          <option value="Bhairavi">Bhairavi (All 4 Komal)</option>
+          <option value="Todi">Todi (Komal Re, Ga, Dha + Teevra Ma)</option>
+          <option value="Purvi">Purvi (Komal Re, Dha + Teevra Ma)</option>
+          <option value="Marwa">Marwa (Komal Re + Teevra Ma)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tanpura Loop Controls -->
+    <div class="controls-row" style="margin-top: 2px; margin-bottom: 8px;">
+      <div class="control-group">
+        <label for="loopPatternSelect">Pattern:</label>
+        <select id="loopPatternSelect" onchange="onLoopPatternChange()">
+          <option value="pattern3" selected>3-Stroke (Sa - Pa - Sḁ)</option>
+          <option value="pattern4">4-Stroke (Pa - Sḁ - Sḁ - Sa)</option>
+        </select>
+      </div>
+      <button id="toggleLoopBtn" class="btn-loop-start" onclick="toggleTanpuraLoop()">▶ Start Tanpura Loop</button>
+    </div>
+
+    <!-- Scale Reference Controls -->
+    <div class="controls-row" style="margin-top: 0; margin-bottom: 0;">
+      <button id="btnPlayAroh" class="btn-scale" onclick="playAroh()">▲ Play Aroh</button>
+      <button id="btnPlayAvroh" class="btn-scale" onclick="playAvroh()">▼ Play Avroh</button>
+    </div>
+  </div>
+
+  <!-- Identification Quiz Panel -->
+  <div class="panel">
+    <h3>Ear Training Challenge</h3>
+
+    <!-- Combined Safeguard Banner & Notes Selector -->
+    <div class="banner-row">
+      <span id="loopRuleBanner" class="loop-rule-banner">
+        If Loop playing, stop Loop before generating or replaying a challenge.
+      </span>
+      <div class="control-group">
+        <label for="noteCount">Notes per test:</label>
+        <select id="noteCount" onchange="onNoteCountChange()">
+          <option value="1">1 Note</option>
+          <option value="2">2 Notes</option>
+          <option value="3" selected>3 Notes</option>
+          <option value="4">4 Notes</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <button id="btnGenChallenge" class="btn-primary" onclick="generateAndPlayChallenge()">Generate Challenge</button>
+      <button id="btnReplay" onclick="replaySequence()">Replay Audio</button>
+    </div>
+
+    <!-- Compact note slots -->
+    <div id="targetDisplay"></div>
+
+    <!-- Single Line: Attempts & Feedback status merged -->
+    <div id="statusLine"></div>
+
+    <!-- Musical Swara Keypad -->
+    <div id="keyboard" class="swar-grid"></div>
+  </div>
+
+  <footer>
+    &copy; 2026 Utpal Chattopadhyay. All rights reserved.
+  </footer>
+
+  <script>
+    let audioCtx = null;
+    let loopBus = null;
+    let sampleBuffer = null;
+    const SAMPLE_BASE_FREQ = 116.54;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        loopBus = audioCtx.createGain();
+        loopBus.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    /* --------------------------------------------------------------------------
+       ENGINE 1: STUDIO SAMPLED (VERSION 3)
+       Pre-renders an acoustic Tanpura impulse buffer with Jawari overtone bloom
+       -------------------------------------------------------------------------- */
+    function prepareAcousticSample() {
+      if (sampleBuffer) return;
+      const ctx = getAudioContext();
+      const sampleRate = ctx.sampleRate;
+      const duration = 4.0;
+      const frameCount = sampleRate * duration;
+      sampleBuffer = ctx.createBuffer(1, frameCount, sampleRate);
+      const data = sampleBuffer.getChannelData(0);
+
+      const f0 = SAMPLE_BASE_FREQ;
+      const partials = [
+        { mult: 1.000, amp: 1.00, decay: 0.85 },
+        { mult: 2.002, amp: 0.68, decay: 1.10 },
+        { mult: 3.006, amp: 0.52, decay: 1.35 },
+        { mult: 4.011, amp: 0.44, decay: 1.60 },
+        { mult: 5.018, amp: 0.36, decay: 1.85 },
+        { mult: 6.026, amp: 0.28, decay: 2.15 },
+        { mult: 7.037, amp: 0.22, decay: 2.45 },
+        { mult: 8.049, amp: 0.16, decay: 2.80 },
+        { mult: 9.064, amp: 0.11, decay: 3.10 },
+        { mult: 10.08, amp: 0.08, decay: 3.50 }
+      ];
+
+      for (let i = 0; i < frameCount; i++) {
+        const t = i / sampleRate;
+        let envelope = (t < 0.03) ? (t / 0.03) : Math.exp(-(t - 0.03) * 0.95);
+        const jawariShimmer = 1.0 + 0.22 * Math.sin(2 * Math.PI * 3.8 * t);
+
+        let sample = 0;
+        for (let p = 0; p < partials.length; p++) {
+          const pt = partials[p];
+          const freq = f0 * pt.mult;
+          const pDecay = Math.exp(-t * pt.decay);
+          const pShimmer = (p >= 3) ? jawariShimmer : 1.0;
+          sample += Math.sin(2 * Math.PI * freq * t) * (pt.amp * pDecay * pShimmer);
+        }
+
+        const woodBody = 1.0 + 0.15 * Math.sin(2 * Math.PI * 220 * t) * Math.exp(-t * 2.0);
+        data[i] = sample * envelope * woodBody * 0.22;
+      }
+    }
+
+    function playSampledTanpura(targetFreq, startTime, duration, isLoop = false) {
+      const ctx = getAudioContext();
+      prepareAcousticSample();
+
+      const source = ctx.createBufferSource();
+      source.buffer = sampleBuffer;
+
+      const playbackRate = targetFreq / SAMPLE_BASE_FREQ;
+      source.playbackRate.setValueAtTime(playbackRate, startTime);
+
+      const gainNode = ctx.createGain();
+      if (isLoop) {
+        gainNode.connect(loopBus);
+      } else {
+        gainNode.connect(ctx.destination);
+      }
+
+      gainNode.gain.setValueAtTime(0.0001, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.85, startTime + 0.02);
+      gainNode.gain.setValueAtTime(0.85, startTime + Math.max(duration - 0.2, 0.1));
+      if (gainNode.gain.exponentialRampToValueAtTime) {
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      }
+
+      source.connect(gainNode);
+      source.start(startTime);
+      source.stop(startTime + duration + 0.05);
+    }
+
+    /* --------------------------------------------------------------------------
+       ENGINE 2: DUAL-CHAMBER GOURD FORMANTS & LFO (VERSION 2)
+       Tumba Gourd (220 Hz) + Tabli Neck (780 Hz) + 3.5 Hz LFO Shimmer
+       -------------------------------------------------------------------------- */
+    function playFormantTanpura(freq, startTime, duration, isLoop = false) {
+      const ctx = getAudioContext();
+      const masterGain = ctx.createGain();
+
+      if (isLoop) {
+        masterGain.connect(loopBus);
+      } else {
+        masterGain.connect(ctx.destination);
+      }
+
+      masterGain.gain.setValueAtTime(0.0001, startTime);
+      masterGain.gain.linearRampToValueAtTime(0.35, startTime + 0.04);
+      masterGain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.40);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      const tumbaFormant = ctx.createBiquadFilter();
+      tumbaFormant.type = 'peaking';
+      tumbaFormant.frequency.setValueAtTime(220, startTime);
+      tumbaFormant.Q.setValueAtTime(2.2, startTime);
+      tumbaFormant.gain.setValueAtTime(7.0, startTime);
+      tumbaFormant.connect(masterGain);
+
+      const tabliFormant = ctx.createBiquadFilter();
+      tabliFormant.type = 'peaking';
+      tabliFormant.frequency.setValueAtTime(780, startTime);
+      tabliFormant.Q.setValueAtTime(3.0, startTime);
+      tabliFormant.gain.setValueAtTime(4.5, startTime);
+      tabliFormant.connect(tumbaFormant);
+
+      const javariFilter = ctx.createBiquadFilter();
+      javariFilter.type = 'lowpass';
+      javariFilter.Q.setValueAtTime(4.0, startTime);
+      javariFilter.frequency.setValueAtTime(Math.min(freq * 2.0, 400), startTime);
+      javariFilter.frequency.exponentialRampToValueAtTime(Math.min(freq * 9.5, 9200), startTime + 0.15);
+      javariFilter.frequency.exponentialRampToValueAtTime(Math.min(freq * 2.5, 2600), startTime + duration);
+      javariFilter.connect(tabliFormant);
+
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(3.5, startTime);
+      lfoGain.gain.setValueAtTime(Math.min(freq * 1.5, 250), startTime);
+      lfo.connect(lfoGain);
+      lfoGain.connect(javariFilter.frequency);
+      lfo.start(startTime);
+      lfo.stop(startTime + duration);
+
+      const harmonics = [
+        { mult: 1.0,  detune: 0.0,  gain: 0.40, type: 'sawtooth' },
+        { mult: 2.0,  detune: 1.8,  gain: 0.28, type: 'sine' },
+        { mult: 3.0,  detune: -2.5, gain: 0.22, type: 'triangle' },
+        { mult: 4.0,  detune: 3.2,  gain: 0.17, type: 'sine' },
+        { mult: 5.0,  detune: -1.9, gain: 0.13, type: 'sine' },
+        { mult: 6.0,  detune: 4.1,  gain: 0.09, type: 'triangle' },
+        { mult: 7.0,  detune: -3.4, gain: 0.07, type: 'sine' },
+        { mult: 8.0,  detune: 2.6,  gain: 0.05, type: 'sine' },
+        { mult: 9.0,  detune: -4.8, gain: 0.03, type: 'sine' },
+        { mult: 10.0, detune: 5.2,  gain: 0.02, type: 'sine' }
+      ];
+
+      harmonics.forEach(h => {
+        const osc = ctx.createOscillator();
+        const hGain = ctx.createGain();
+        osc.type = h.type;
+        osc.frequency.setValueAtTime(freq * h.mult, startTime);
+        osc.detune.setValueAtTime(h.detune, startTime);
+        hGain.gain.setValueAtTime(h.gain, startTime);
+        osc.connect(hGain);
+        hGain.connect(javariFilter);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      });
+    }
+
+    /* --------------------------------------------------------------------------
+       ENGINE 3: ACOUSTIC LADDER SYNTHESIZER (VERSION 1)
+       8-Harmonic ladder with micro-detuning & body peaking filter
+       -------------------------------------------------------------------------- */
+    function playAcousticTanpura(freq, startTime, duration, isLoop = false) {
+      const ctx = getAudioContext();
+      const masterGain = ctx.createGain();
+
+      if (isLoop) {
+        masterGain.connect(loopBus);
+      } else {
+        masterGain.connect(ctx.destination);
+      }
+
+      masterGain.gain.setValueAtTime(0.0001, startTime);
+      masterGain.gain.linearRampToValueAtTime(0.32, startTime + 0.035);
+      masterGain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.35);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      const bodyFilter = ctx.createBiquadFilter();
+      bodyFilter.type = 'peaking';
+      bodyFilter.frequency.setValueAtTime(220, startTime);
+      bodyFilter.Q.setValueAtTime(2.0, startTime);
+      bodyFilter.gain.setValueAtTime(6.0, startTime);
+      bodyFilter.connect(masterGain);
+
+      const javariFilter = ctx.createBiquadFilter();
+      javariFilter.type = 'lowpass';
+      javariFilter.Q.setValueAtTime(3.5, startTime);
+      javariFilter.frequency.setValueAtTime(Math.min(freq * 1.8, 350), startTime);
+      javariFilter.frequency.exponentialRampToValueAtTime(Math.min(freq * 8.0, 7500), startTime + 0.12);
+      javariFilter.frequency.exponentialRampToValueAtTime(Math.min(freq * 2.2, 2200), startTime + duration);
+      javariFilter.connect(bodyFilter);
+
+      const harmonics = [
+        { mult: 1.0,   detune: 0,  gain: 0.42, type: 'sawtooth' },
+        { mult: 2.0,   detune: 2,  gain: 0.26, type: 'sine' },
+        { mult: 3.0,   detune: -3, gain: 0.20, type: 'triangle' },
+        { mult: 4.0,   detune: 4,  gain: 0.15, type: 'sine' },
+        { mult: 5.0,   detune: -2, gain: 0.12, type: 'sine' },
+        { mult: 6.0,   detune: 5,  gain: 0.08, type: 'triangle' },
+        { mult: 7.0,   detune: -4, gain: 0.05, type: 'sine' },
+        { mult: 8.0,   detune: 3,  gain: 0.03, type: 'sine' }
+      ];
+
+      harmonics.forEach(h => {
+        const osc = ctx.createOscillator();
+        const hGain = ctx.createGain();
+        osc.type = h.type;
+        osc.frequency.setValueAtTime(freq * h.mult, startTime);
+        osc.detune.setValueAtTime(h.detune, startTime);
+        hGain.gain.setValueAtTime(h.gain, startTime);
+        osc.connect(hGain);
+        hGain.connect(javariFilter);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      });
+    }
+
+    /* --------------------------------------------------------------------------
+       CENTRAL AUDIO ROUTER
+       Directs all Tanpura and Swara notes to the currently selected acoustic engine
+       -------------------------------------------------------------------------- */
+    function playMasterStroke(freq, startTime, duration, isLoop = false) {
+      const timbre = document.getElementById('timbreSelect').value;
+      if (timbre === 'sampled') {
+        playSampledTanpura(freq, startTime, duration, isLoop);
+      } else if (timbre === 'formant') {
+        playFormantTanpura(freq, startTime, duration, isLoop);
+      } else {
+        playAcousticTanpura(freq, startTime, duration, isLoop);
+      }
+    }
+
+    function onTimbreChange() {
+      updateTimbreAdvisor();
+      if (isLooping) startTanpuraLoop();
+    }
+
+    function updateTimbreAdvisor() {
+      const isMobile = window.innerWidth <= 600;
+      const timbre = document.getElementById('timbreSelect').value;
+      const advisor = document.getElementById('timbreAdvisor');
+
+      if (isMobile && timbre !== 'sampled') {
+        advisor.textContent = "💡 Note: 'Studio Sampled' is recommended for mobile or laptop.";
+      } else if (!isMobile && timbre === 'sampled') {
+        advisor.textContent = "💡 Tip: On laptop or headphones, 'Dual-Chamber Resonator' offers richer overtone resonance.";
+      } else {
+        advisor.textContent = "";
+      }
+    }
+
+    const THAATS = {
+      Bilawal: [
+        { label: 'S', semitones: 0 }, { label: 'R', semitones: 2 }, { label: 'G', semitones: 4 },
+        { label: 'M', semitones: 5 }, { label: 'P', semitones: 7 }, { label: 'D', semitones: 9 },
+        { label: 'N', semitones: 11 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Kalyan: [
+        { label: 'S', semitones: 0 }, { label: 'R', semitones: 2 }, { label: 'G', semitones: 4 },
+        { label: "M'", semitones: 6 }, { label: 'P', semitones: 7 }, { label: 'D', semitones: 9 },
+        { label: 'N', semitones: 11 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Khamaj: [
+        { label: 'S', semitones: 0 }, { label: 'R', semitones: 2 }, { label: 'G', semitones: 4 },
+        { label: 'M', semitones: 5 }, { label: 'P', semitones: 7 }, { label: 'D', semitones: 9 },
+        { label: 'n', semitones: 10 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Kafi: [
+        { label: 'S', semitones: 0 }, { label: 'R', semitones: 2 }, { label: 'g', semitones: 3 },
+        { label: 'M', semitones: 5 }, { label: 'P', semitones: 7 }, { label: 'D', semitones: 9 },
+        { label: 'n', semitones: 10 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Asavari: [
+        { label: 'S', semitones: 0 }, { label: 'R', semitones: 2 }, { label: 'g', semitones: 3 },
+        { label: 'M', semitones: 5 }, { label: 'P', semitones: 7 }, { label: 'd', semitones: 8 },
+        { label: 'n', semitones: 10 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Bhairav: [
+        { label: 'S', semitones: 0 }, { label: 'r', semitones: 1 }, { label: 'G', semitones: 4 },
+        { label: 'M', semitones: 5 }, { label: 'P', semitones: 7 }, { label: 'd', semitones: 8 },
+        { label: 'N', semitones: 11 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Bhairavi: [
+        { label: 'S', semitones: 0 }, { label: 'r', semitones: 1 }, { label: 'g', semitones: 3 },
+        { label: 'M', semitones: 5 }, { label: 'P', semitones: 7 }, { label: 'd', semitones: 8 },
+        { label: 'n', semitones: 10 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Todi: [
+        { label: 'S', semitones: 0 }, { label: 'r', semitones: 1 }, { label: 'g', semitones: 3 },
+        { label: "M'", semitones: 6 }, { label: 'P', semitones: 7 }, { label: 'd', semitones: 8 },
+        { label: 'N', semitones: 11 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Purvi: [
+        { label: 'S', semitones: 0 }, { label: 'r', semitones: 1 }, { label: 'G', semitones: 4 },
+        { label: "M'", semitones: 6 }, { label: 'P', semitones: 7 }, { label: 'd', semitones: 8 },
+        { label: 'N', semitones: 11 }, { label: 'Sḁ', semitones: 12 }
+      ],
+      Marwa: [
+        { label: 'S', semitones: 0 }, { label: 'r', semitones: 1 }, { label: 'G', semitones: 4 },
+        { label: "M'", semitones: 6 }, { label: 'P', semitones: 7 }, { label: 'D', semitones: 9 },
+        { label: 'N', semitones: 11 }, { label: 'Sḁ', semitones: 12 }
+      ]
+    };
+
+    function getBaseFrequency() {
+      return parseFloat(document.getElementById('scaleSelect').value);
+    }
+
+    function getFrequency(semitones) {
+      return getBaseFrequency() * Math.pow(2, semitones / 12);
+    }
+
+    let isLooping = false;
+    let loopTimeoutId = null;
+    let isScalePlaying = false;
+    let scaleTimeoutId = null;
+
+    function toggleTanpuraLoop() {
+      if (isLooping) {
+        stopTanpuraLoop();
+      } else {
+        startTanpuraLoop();
+      }
+    }
+
+    function startTanpuraLoop() {
+      stopTanpuraLoop();
+      const ctx = getAudioContext();
+
+      loopBus.gain.cancelScheduledValues(ctx.currentTime);
+      loopBus.gain.setValueAtTime(1.0, ctx.currentTime);
+
+      isLooping = true;
+      const btn = document.getElementById('toggleLoopBtn');
+      btn.textContent = '⏹ Stop Tanpura Loop';
+      btn.className = 'btn-loop-stop';
+
+      document.getElementById('btnPlayAroh').disabled = true;
+      document.getElementById('btnPlayAvroh').disabled = true;
+
+      scheduleNextCycle();
+    }
+
+    function stopTanpuraLoop() {
+      isLooping = false;
+      if (loopTimeoutId) {
+        clearTimeout(loopTimeoutId);
+        loopTimeoutId = null;
+      }
+      if (audioCtx && loopBus) {
+        loopBus.gain.cancelScheduledValues(audioCtx.currentTime);
+        loopBus.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      }
+      const btn = document.getElementById('toggleLoopBtn');
+      if (btn) {
+        btn.textContent = '▶ Start Tanpura Loop';
+        btn.className = 'btn-loop-start';
+      }
+
+      if (!isScalePlaying) {
+        document.getElementById('btnPlayAroh').disabled = false;
+        document.getElementById('btnPlayAvroh').disabled = false;
+      }
+    }
+
+    function onLoopPatternChange() {
+      if (isLooping) startTanpuraLoop();
+    }
+
+    function scheduleNextCycle() {
+      if (!isLooping) return;
+
+      const pattern = document.getElementById('loopPatternSelect').value;
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const step = 1.25;
+      const sustain = 2.4;
+
+      let totalCycleSeconds = 0;
+
+      if (pattern === 'pattern3') {
+        playMasterStroke(getFrequency(0),  now, sustain, true);
+        playMasterStroke(getFrequency(7),  now + step, sustain, true);
+        playMasterStroke(getFrequency(12), now + (step * 2), sustain, true);
+        totalCycleSeconds = (3 * step) + 0.35;
+      } else {
+        playMasterStroke(getFrequency(7),  now, sustain, true);
+        playMasterStroke(getFrequency(12), now + step, sustain, true);
+        playMasterStroke(getFrequency(12), now + (step * 2), sustain, true);
+        playMasterStroke(getFrequency(0),  now + (step * 3), sustain, true);
+        totalCycleSeconds = (4 * step) + 0.40;
+      }
+
+      loopTimeoutId = setTimeout(scheduleNextCycle, totalCycleSeconds * 1000);
+    }
+
+    function playAroh() {
+      if (isLooping || isScalePlaying) return;
+      playScaleSequence(currentSwaras.slice(), 'aroh');
+    }
+
+    function playAvroh() {
+      if (isLooping || isScalePlaying) return;
+      playScaleSequence(currentSwaras.slice().reverse(), 'avroh');
+    }
+
+    function playScaleSequence(notes, mode) {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const step = 0.85;
+      const noteDuration = 0.95;
+
+      isScalePlaying = true;
+      const btnAroh = document.getElementById('btnPlayAroh');
+      const btnAvroh = document.getElementById('btnPlayAvroh');
+      const btnLoop = document.getElementById('toggleLoopBtn');
+      const btnGen = document.getElementById('btnGenChallenge');
+      const btnReplay = document.getElementById('btnReplay');
+
+      btnLoop.disabled = true;
+      btnGen.disabled = true;
+      btnReplay.disabled = true;
+
+      if (mode === 'aroh') {
+        btnAroh.textContent = '▲ Playing Aroh...';
+        btnAvroh.disabled = true;
+      } else {
+        btnAvroh.textContent = '▼ Playing Avroh...';
+        btnAroh.disabled = true;
+      }
+
+      notes.forEach((item, index) => {
+        playMasterStroke(getFrequency(item.semitones), now + (index * step), noteDuration, false);
+      });
+
+      const totalDurationMs = (notes.length * step) * 1000;
+      scaleTimeoutId = setTimeout(() => {
+        isScalePlaying = false;
+        btnAroh.textContent = '▲ Play Aroh';
+        btnAvroh.textContent = '▼ Play Avroh';
+        btnAroh.disabled = false;
+        btnAvroh.disabled = false;
+        btnLoop.disabled = false;
+        btnGen.disabled = false;
+        btnReplay.disabled = false;
+      }, totalDurationMs);
+    }
+
+    let currentSwaras = [];
+
+    function renderKeyboard() {
+      const thaatName = document.getElementById('thaatSelect').value;
+      currentSwaras = THAATS[thaatName];
+      const keyboard = document.getElementById('keyboard');
+      keyboard.innerHTML = '';
+
+      currentSwaras.forEach((item, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'swar-btn';
+        btn.innerHTML = `${item.label} <span class="key-hint">[${index + 1}]</span>`;
+        btn.onclick = () => onSwarClick(item);
+        keyboard.appendChild(btn);
+      });
+    }
+
+    function onConfigChange() {
+      renderKeyboard();
+      currentSequence = [];
+      userGuesses = [];
+      failedAttempts = 0;
+      updateDisplay();
+      renderStatusLine();
+      if (isLooping) startTanpuraLoop();
+    }
+
+    function onNoteCountChange() {
+      currentSequence = [];
+      userGuesses = [];
+      failedAttempts = 0;
+      updateDisplay();
+      renderStatusLine();
+    }
+
+    function flashLoopBanner() {
+      const banner = document.getElementById('loopRuleBanner');
+      banner.classList.add('loop-rule-alert');
+      setTimeout(() => {
+        banner.classList.remove('loop-rule-alert');
+      }, 1400);
+    }
+
+    let currentSequence = [];
+    let userGuesses = [];
+    let failedAttempts = 0;
+    const MAX_ATTEMPTS = 3;
+
+    function renderStatusLine(feedbackText = '', feedbackClass = '') {
+      const line = document.getElementById('statusLine');
+      if (currentSequence.length === 0 && !feedbackText) {
+        line.innerHTML = '';
+        return;
+      }
+
+      let attemptText = `Attempts: ${failedAttempts} / ${MAX_ATTEMPTS}`;
+      if (!feedbackText) {
+        line.innerHTML = `<span>${attemptText}</span>`;
+      } else {
+        line.innerHTML = `<span>${attemptText}</span> &bull; <span class="status-msg ${feedbackClass}">${feedbackText}</span>`;
+      }
+    }
+
+    function generateAndPlayChallenge() {
+      if (isLooping) {
+        flashLoopBanner();
+        return;
+      }
+
+      const count = parseInt(document.getElementById('noteCount').value, 10);
+      currentSequence = [];
+      userGuesses = [];
+      failedAttempts = 0;
+
+      for (let i = 0; i < count; i++) {
+        const randomIndex = Math.floor(Math.random() * currentSwaras.length);
+        currentSequence.push(currentSwaras[randomIndex]);
+      }
+
+      updateDisplay();
+      renderStatusLine();
+      replaySequence();
+    }
+
+    function replaySequence() {
+      if (currentSequence.length === 0) return;
+
+      if (isLooping) {
+        flashLoopBanner();
+        return;
+      }
+
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const step = 2.0;
+      const noteDuration = 1.0;
+
+      currentSequence.forEach((item, index) => {
+        playMasterStroke(getFrequency(item.semitones), now + (index * step), noteDuration, false);
+      });
+    }
+
+    function onSwarClick(item) {
+      const ctx = getAudioContext();
+      playMasterStroke(getFrequency(item.semitones), ctx.currentTime, 1.2, false);
+
+      if (currentSequence.length > 0 && userGuesses.length < currentSequence.length) {
+        userGuesses.push(item);
+        updateDisplay();
+        if (userGuesses.length === currentSequence.length) checkAnswer();
+      }
+    }
+
+    function updateDisplay() {
+      const targetElem = document.getElementById('targetDisplay');
+      if (currentSequence.length === 0) {
+        targetElem.textContent = '';
+        return;
+      }
+      const remaining = currentSequence.length - userGuesses.length;
+      let display = userGuesses.map(g => g.label).join('  ');
+      for (let i = 0; i < remaining; i++) {
+        display += (display.length > 0 ? '  ' : '') + '_';
+      }
+      targetElem.textContent = display;
+    }
+
+    function checkAnswer() {
+      const isCorrect = currentSequence.every((val, idx) => val.label === userGuesses[idx].label);
+
+      if (isCorrect) {
+        renderStatusLine('Correct! Well done.', 'msg-correct');
+        currentSequence = [];
+      } else {
+        failedAttempts++;
+        if (failedAttempts >= MAX_ATTEMPTS) {
+          const answerStr = currentSequence.map(n => n.label).join(' - ');
+          renderStatusLine(`Out of attempts! Notes: ${answerStr}`, 'msg-failed');
+          document.getElementById('targetDisplay').textContent = currentSequence.map(n => n.label).join('  ');
+          currentSequence = [];
+        } else {
+          const remaining = MAX_ATTEMPTS - failedAttempts;
+          renderStatusLine(`Incorrect! ${remaining} attempt${remaining > 1 ? 's' : ''} left.`, 'msg-incorrect');
+          userGuesses = [];
+          setTimeout(updateDisplay, 600);
+        }
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const keyNum = parseInt(e.key, 10);
+      if (keyNum >= 1 && keyNum <= currentSwaras.length) {
+        onSwarClick(currentSwaras[keyNum - 1]);
+      }
+    });
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Always default to Studio Sampled on all devices
+  document.getElementById('timbreSelect').value = 'sampled';
+  updateTimbreAdvisor();
+  renderKeyboard();
+});
+  </script>
+</body>
+</html>
