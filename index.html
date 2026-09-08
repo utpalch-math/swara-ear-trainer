@@ -274,16 +274,16 @@
     <h3>Tonic & Tanpura Controls</h3>
 
     <!-- Master Acoustic Timbre Selection -->
-    <div class="controls-row" style="margin-bottom: 6px;">
-      <div class="control-group">
-        <label for="timbreSelect">Acoustic Timbre:</label>
-        <select id="timbreSelect" onchange="onTimbreChange()">
-          <option value="sampled" selected>Studio Sampled (Recommended for Mobile or Laptop)</option>
-          <option value="formant">Dual-Chamber Resonator (Recommended for Laptop / Headphones)</option>
-          <option value="ladder">Acoustic Ladder Synthesizer</option>
-        </select>
-      </div>
-    </div>
+<div class="controls-row" style="margin-bottom: 8px; width: 100%; box-sizing: border-box; padding: 0 4px;">
+  <div class="control-group" style="width: 100%; display: flex; flex-direction: column; align-items: stretch;">
+    <label for="timbreSelect" style="margin-bottom: 4px; font-weight: 600; font-size: 0.85rem; color: #444;">Acoustic Timbre:</label>
+    <select id="timbreSelect" onchange="onTimbreChange()" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 0.82rem; border-radius: 6px; border: 1px solid #ccc; background-color: #fff; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+      <option value="sampled" selected>Studio Sampled (Mobile / Laptop)</option>
+      <option value="formant">Dual-Chamber Resonator (Headphones)</option>
+      <option value="ladder">Acoustic Ladder Synthesizer</option>
+    </select>
+  </div>
+</div>
     <div id="timbreAdvisor" class="timbre-advisor"></div>
 
     <div class="controls-row">
