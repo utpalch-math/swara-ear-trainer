@@ -1,0 +1,22 @@
+{
+  "name": "Swara Ear Trainer",
+  "short_name": "Swara",
+  "description": "Thaat-based relative pitch ear training with acoustic Tanpura drone",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#8b4513",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
